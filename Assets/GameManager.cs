@@ -9,6 +9,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject tutorial;
     [SerializeField] GameObject redKnight;
     [SerializeField] GameObject blueKnight;
+    [SerializeField] GameObject redWizard;
+    [SerializeField] GameObject blueWizard;
     [SerializeField] Transform redFlag;
     [SerializeField] Transform blueFlag;
     [SerializeField] LayerMask groundMask;
@@ -18,6 +20,18 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public List<GameObject> blueTeam = new List<GameObject>();
 
     bool isPlaying = false;
+
+    enum UnitType {Knight, Wizard};
+
+    UnitType currType = UnitType.Knight;
+
+    public static GameManager instance;
+
+    private void Awake()
+    {
+        if (instance == null) instance = this;
+        else Destroy(gameObject);
+    }
 
     // Update is called once per frame
     void Update()
@@ -31,9 +45,20 @@ public class GameManager : MonoBehaviour
                 RaycastHit hit;
                 if (Physics.Raycast(currentRay, out hit, 3000, groundMask))
                 {
-                    GameObject newKnight = Instantiate(redKnight, hit.point, Quaternion.identity);
-                    redTeam.Add(newKnight);
-                    newKnight.GetComponent<Knight>().goal = blueFlag;
+                    switch (currType)
+                    {
+                        case UnitType.Knight:
+                            GameObject newKnight = Instantiate(redKnight, hit.point, Quaternion.identity);
+                            redTeam.Add(newKnight);
+                            newKnight.GetComponent<Knight>().goal = blueFlag;
+                            break;
+                        case UnitType.Wizard:
+                            GameObject newWizard = Instantiate(redWizard, hit.point, Quaternion.identity);
+                            redTeam.Add(newWizard);
+                            newWizard.GetComponent<Wizard>().goal = blueFlag;
+                            break;
+                    }
+                    
                 }
             }
             else if (Input.GetMouseButtonDown(1))
@@ -43,11 +68,24 @@ public class GameManager : MonoBehaviour
                 RaycastHit hit;
                 if (Physics.Raycast(currentRay, out hit, 3000, groundMask))
                 {
-                    GameObject newKnight = Instantiate(blueKnight, hit.point, Quaternion.identity);
-                    blueTeam.Add(newKnight);
-                    newKnight.GetComponent<Knight>().goal = redFlag;
+                    switch (currType)
+                    {
+                        case UnitType.Knight:
+                            GameObject newKnight = Instantiate(blueKnight, hit.point, Quaternion.identity);
+                            blueTeam.Add(newKnight);
+                            newKnight.GetComponent<Knight>().goal = redFlag;
+                            break;
+                        case UnitType.Wizard:
+                            GameObject newWizard = Instantiate(blueWizard, hit.point, Quaternion.identity);
+                            blueTeam.Add(newWizard);
+                            newWizard.GetComponent<Wizard>().goal = redFlag;
+                            break;
+                    }
                 }
             }
+
+            if (Input.GetKeyDown(KeyCode.Alpha1)) currType = UnitType.Knight;
+            else if (Input.GetKeyDown(KeyCode.Alpha2)) currType = UnitType.Wizard;
         }
     }
 

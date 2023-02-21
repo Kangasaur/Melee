@@ -5,16 +5,17 @@ using UnityEngine.AI;
 
 public class Knight : MonoBehaviour
 {
-    NavMeshAgent nav;
-    Animator anim;
+    protected NavMeshAgent nav;
+    protected Animator anim;
     public Transform goal;
     [SerializeField] GameObject healthBar;
     [SerializeField] string enemyTag;
-    [SerializeField] float spotDist = 10f;
+    [SerializeField] protected float spotDist = 10f;
     [SerializeField] float hitDist = 5f;
-    float maxHitTime = 7f;
-    float hitTime;
-    float currHitTime = 0;
+    [SerializeField] protected float walkSpeed = 3f;
+    protected float maxHitTime = 7f;
+    protected float hitTime;
+    protected float currHitTime = 0;
     float _health = 0;
     [HideInInspector] public bool isDead = false;
     float healthBarMax;
@@ -27,17 +28,17 @@ public class Knight : MonoBehaviour
         get { return _health; }
         set { _health = Mathf.Clamp(value, 0, totalHealth); }
     }
-    float totalHealth = 20f;
+    [SerializeField] protected float totalHealth = 20f;
 
     // Start is called before the first frame update
-    void Start()
+    protected virtual void Start()
     {
         nav = GetComponent<NavMeshAgent>();
         anim = GetComponentInChildren<Animator>();
         nav.SetDestination(goal.position);
         anim.SetBool("isWalking", true);
         health = totalHealth;
-        nav.speed = 3f;
+        nav.speed = walkSpeed;
         hitTime = Random.Range(1f, maxHitTime);
         healthBarMax = healthBar.transform.localScale.x;
         healthBarPos = healthBar.transform.localPosition.x;
@@ -45,7 +46,7 @@ public class Knight : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    protected virtual void Update()
     {
         if (!isDead && !nav.isStopped)
         {
@@ -53,24 +54,12 @@ public class Knight : MonoBehaviour
             currHitTime += Time.deltaTime;
             if (nearest != null && Vector3.Distance(transform.position, nearest.position) < spotDist)
             {
-                nav.SetDestination(nearest.position);
-                if (Vector3.Distance(transform.position, nearest.position) < hitDist)
-                {
-                    nav.speed = 3f;
-                    if (currHitTime > hitTime)
-                    {
-                        hitTime = Random.Range(1f, maxHitTime);
-                        currHitTime = 0f;
-                        anim.SetTrigger("attack");
-                        nearest.gameObject.GetComponent<Knight>().GetHit();
-                    }
-                }
-                else nav.speed = 8f;
+                DoHit(nearest);
             }
             else
             {
                 nav.SetDestination(goal.position);
-                nav.speed = 3f;
+                nav.speed = walkSpeed;
             }
             anim.SetFloat("velocity", nav.velocity.magnitude);
         }
@@ -107,11 +96,27 @@ public class Knight : MonoBehaviour
         healthBar.transform.localPosition = new Vector3(health / 20f * healthBarPos, 0f, 0f);
     }
 
+    protected virtual void DoHit(Transform nearest)
+    {
+        nav.SetDestination(nearest.position);
+        if (Vector3.Distance(transform.position, nearest.position) < hitDist)
+        {
+            nav.speed = 3f;
+            if (currHitTime > hitTime)
+            {
+                hitTime = Random.Range(1f, maxHitTime);
+                currHitTime = 0f;
+                anim.SetTrigger("attack");
+                nearest.gameObject.GetComponent<Knight>().GetHit();
+            }
+        }
+        else nav.speed = 8f;
+    }
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.transform == goal)
         {
-            FindObjectOfType<GameManager>().EndGame(enemyTag == "BlueTeam" ? "Red" : "Blue");
+            GameManager.instance.EndGame(enemyTag == "BlueTeam" ? "Red" : "Blue");
         }
     }
 }
